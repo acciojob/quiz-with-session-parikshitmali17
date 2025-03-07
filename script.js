@@ -57,6 +57,10 @@
 // }
 // renderQuestions();
 
+const questionsElement = document.getElementById("questions");
+const submitButton = document.getElementById("submit");
+const scoreElement = document.getElementById("score");
+
 const questions = [
   {
     question: "What is the capital of France?",
@@ -75,7 +79,7 @@ const questions = [
   },
   {
     question: "Which is the largest planet in our solar system?",
-    choices: ["Earth", "Jupiter", "Mars", "Venus"],
+    choices: ["Earth", "Jupiter", "Mars"],
     answer: "Jupiter",
   },
   {
@@ -85,76 +89,56 @@ const questions = [
   },
 ];
 
-const questionsContainer = document.getElementById("questions");
-const submitButton = document.getElementById("submit");
-const scoreDisplay = document.getElementById("score");
+let userAnswers = JSON.parse(sessionStorage.getItem("progress")) || [];
 
-// Load saved progress from session storage
-function loadProgress() {
-  const savedProgress = JSON.parse(sessionStorage.getItem("progress")) || {};
-  return savedProgress;
-}
-
-// Save selected answers to session storage
-function saveProgress(questionIndex, answer) {
-  const progress = loadProgress();
-  progress[questionIndex] = answer;
-  sessionStorage.setItem("progress", JSON.stringify(progress));
-}
-
-// Render questions
 function renderQuestions() {
-  const savedProgress = loadProgress();
-  
-  questions.forEach((question, index) => {
-    const questionElement = document.createElement("div");
-    questionElement.innerHTML = `<p>${question.question}</p>`;
-    
-    question.choices.forEach((choice) => {
-      const choiceElement = document.createElement("input");
-      choiceElement.setAttribute("type", "radio");
-      choiceElement.setAttribute("name", `question-${index}`);
-      choiceElement.setAttribute("value", choice);
-      if (savedProgress[index] === choice) {
-        choiceElement.checked = true;
+  questionsElement.innerHTML = "";
+  for (let i = 0; i < questions.length; i++) {
+    const question = questions[i];
+    const questionDiv = document.createElement("div");
+    const questionText = document.createTextNode(question.question);
+    questionDiv.appendChild(questionText);
+
+    for (let j = 0; j < question.choices.length; j++) {
+      const choice = question.choices[j];
+      const choiceInput = document.createElement("input");
+      choiceInput.type = "radio";
+      choiceInput.name = `question-${i}`;
+      choiceInput.value = choice;
+
+      if (userAnswers[i] === choice) {
+        choiceInput.checked = true;
       }
-      
-      choiceElement.addEventListener("change", () => {
-        saveProgress(index, choice);
+
+      choiceInput.addEventListener("change", () => {
+        userAnswers[i] = choice;
+        sessionStorage.setItem("progress", JSON.stringify(userAnswers));
       });
-      
-      const label = document.createElement("label");
-      label.textContent = choice;
-      
-      questionElement.appendChild(choiceElement);
-      questionElement.appendChild(label);
-    });
-    
-    questionsContainer.appendChild(questionElement);
-  });
+
+      const choiceLabel = document.createElement("label");
+      choiceLabel.appendChild(choiceInput);
+      choiceLabel.appendChild(document.createTextNode(` ${choice}`));
+      questionDiv.appendChild(choiceLabel);
+    }
+    questionsElement.appendChild(questionDiv);
+  }
 }
 
-// Calculate and display the score
 submitButton.addEventListener("click", () => {
-  const savedProgress = loadProgress();
   let score = 0;
-  
-  questions.forEach((question, index) => {
-    if (savedProgress[index] === question.answer) {
+  for (let i = 0; i < questions.length; i++) {
+    if (userAnswers[i] === questions[i].answer) {
       score++;
     }
-  });
-  
-  scoreDisplay.textContent = `Your score is ${score} out of 5.`;
-  localStorage.setItem("score", score);
+  }
+  const scoreText = `Your score is ${score} out of ${questions.length}.`;
+  scoreElement.textContent = scoreText;
+  localStorage.setItem("score", score.toString());
 });
 
-// Load last score from local storage
-window.onload = () => {
-  renderQuestions();
-  const savedScore = localStorage.getItem("score");
-  if (savedScore !== null) {
-    scoreDisplay.textContent = `Your score is ${savedScore} out of 5.`;
-  }
-};
+const savedScore = localStorage.getItem("score");
+if (savedScore !== null) {
+  scoreElement.textContent = `Your score is ${savedScore} out of ${questions.length}.`;
+}
 
+renderQuestions();
