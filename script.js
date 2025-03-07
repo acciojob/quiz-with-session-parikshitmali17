@@ -57,10 +57,6 @@
 // }
 // renderQuestions();
 
-const questionsElement = document.getElementById("questions");
-const submitButton = document.getElementById("submit");
-const scoreElement = document.getElementById("score");
-
 const questions = [
   { question: "What is the capital of France?", choices: ["Paris", "London", "Berlin", "Madrid"], answer: "Paris" },
   { question: "What is the highest mountain in the world?", choices: ["Everest", "Kilimanjaro", "Denali", "Matterhorn"], answer: "Everest" },
@@ -69,52 +65,67 @@ const questions = [
   { question: "What is the capital of Canada?", choices: ["Toronto", "Montreal", "Vancouver", "Ottawa"], answer: "Ottawa" }
 ];
 
-// Retrieve stored answers from session storage
-const userAnswers = JSON.parse(sessionStorage.getItem("progress")) || {};
+const questionsElement = document.getElementById("questions");
+const submitButton = document.getElementById("submit");
+const scoreElement = document.getElementById("score");
 
-function renderQuestions() {
+// Load previous answers from sessionStorage
+const loadAnswers = () => {
+  return JSON.parse(sessionStorage.getItem("progress")) || {};
+};
+
+const saveAnswers = (answers) => {
+  sessionStorage.setItem("progress", JSON.stringify(answers));
+};
+
+const renderQuestions = () => {
+  const savedAnswers = loadAnswers();
   questionsElement.innerHTML = "";
-  questions.forEach((question, index) => {
-    const questionElement = document.createElement("div");
-    questionElement.innerHTML = `<p>${question.question}</p>`;
-    
-    question.choices.forEach(choice => {
-      const choiceElement = document.createElement("input");
-      choiceElement.type = "radio";
-      choiceElement.name = `question-${index}`;
-      choiceElement.value = choice;
-      choiceElement.checked = userAnswers[index] === choice;
-      
-      choiceElement.addEventListener("change", () => {
-        userAnswers[index] = choice;
-        sessionStorage.setItem("progress", JSON.stringify(userAnswers));
+
+  questions.forEach((q, i) => {
+    const questionDiv = document.createElement("div");
+    questionDiv.innerHTML = `<p>${q.question}</p>`;
+
+    q.choices.forEach(choice => {
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `question-${i}`;
+      input.value = choice;
+      if (savedAnswers[i] === choice) {
+        input.checked = true;
+      }
+      input.addEventListener("change", () => {
+        const answers = loadAnswers();
+        answers[i] = choice;
+        saveAnswers(answers);
       });
       
-      const label = document.createElement("label");
-      label.appendChild(choiceElement);
-      label.appendChild(document.createTextNode(choice));
-      questionElement.appendChild(label);
+      questionDiv.appendChild(input);
+      questionDiv.appendChild(document.createTextNode(choice));
     });
-    
-    questionsElement.appendChild(questionElement);
+
+    questionsElement.appendChild(questionDiv);
   });
-}
+};
 
 submitButton.addEventListener("click", () => {
+  const savedAnswers = loadAnswers();
   let score = 0;
-  questions.forEach((question, index) => {
-    if (userAnswers[index] === question.answer) {
+
+  questions.forEach((q, i) => {
+    if (savedAnswers[i] === q.answer) {
       score++;
     }
   });
-  localStorage.setItem("score", score);
+
   scoreElement.textContent = `Your score is ${score} out of 5.`;
+  localStorage.setItem("score", score);
 });
 
-// Display stored score if available
-const savedScore = localStorage.getItem("score");
-if (savedScore !== null) {
-  scoreElement.textContent = `Your last score was ${savedScore} out of 5.`;
+// Load previous score from localStorage
+const previousScore = localStorage.getItem("score");
+if (previousScore !== null) {
+  scoreElement.textContent = `Your score is ${previousScore} out of 5.`;
 }
 
 renderQuestions();
