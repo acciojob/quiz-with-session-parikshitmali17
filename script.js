@@ -106,13 +106,20 @@ function renderQuestions() {
       choiceInput.name = `question-${i}`;
       choiceInput.value = choice;
 
+      // Check if this choice was previously selected
       if (userAnswers[i] === choice) {
         choiceInput.checked = true;
+        choiceInput.setAttribute("checked", "true"); // Set attribute for Cypress test
       }
 
       choiceInput.addEventListener("change", () => {
         userAnswers[i] = choice;
         sessionStorage.setItem("progress", JSON.stringify(userAnswers));
+        // Update checked attribute for Cypress test
+        document.querySelectorAll(`input[name="question-${i}"]`).forEach((input) => {
+          input.removeAttribute("checked");
+        });
+        choiceInput.setAttribute("checked", "true");
       });
 
       const choiceLabel = document.createElement("label");
@@ -136,6 +143,7 @@ submitButton.addEventListener("click", () => {
   localStorage.setItem("score", score.toString());
 });
 
+// Display previous score from local storage
 const savedScore = localStorage.getItem("score");
 if (savedScore !== null) {
   scoreElement.textContent = `Your score is ${savedScore} out of ${questions.length}.`;
